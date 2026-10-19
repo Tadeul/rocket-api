@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ROCKET · SoulUp</title>
+<style>
+  :root {
+    --bg: #f3f6f8;
+    --surface: #ffffff;
+    --ink: #0f1b2d;
+    --muted: #5b6b7f;
+    --line: #d9e0e7;
+    --brand: #0b6e4f;
+    --brand-ink: #ffffff;
+    --signal: #f2b705;
+    --danger: #b3261e;
+    --ok-bg: #e3f4ec;
+    --warn-bg: #fff3cc;
+    --off-bg: #e8ecf0;
+    --shadow: 0 1px 2px rgba(15, 27, 45, .06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1520;
+      --surface: #152131;
+      --ink: #e8eef5;
+      --muted: #9aaabb;
+      --line: #263a50;
+      --brand: #3ecf9b;
+      --brand-ink: #062a1e;
+      --signal: #f2b705;
+      --danger: #ff8a80;
+      --ok-bg: #12382c;
+      --warn-bg: #3b3210;
+      --off-bg: #223245;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Avenir Next", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    line-height: 1.45;
+  }
+  header {
+    background: var(--ink);
+    color: #fff;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  header h1 { margin: 0; font-size: 22px; letter-spacing: .04em; }
+  header .sub { color: #b8c6d6; font-size: 14px; }
+  header .status { margin-left: auto; font-size: 13px; color: #b8c6d6; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #8896a6; display: inline-block; }
+  .dot.on { background: #3ecf9b; }
+  .dot.off { background: #ff6b6b; }
+
+  nav { display: flex; gap: 4px; padding: 0 24px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  nav button {
+    background: none; border: 0; border-bottom: 3px solid transparent; color: var(--muted);
+    padding: 14px 18px; font: inherit; font-weight: 600; cursor: pointer;
+  }
+  nav button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--signal); }
+  nav button:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 3px solid var(--signal); outline-offset: 2px;
+  }
+
+  main { max-width: 1180px; margin: 0 auto; padding: 24px; }
+  section[hidden] { display: none; }
+  .grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 20px; box-shadow: var(--shadow); }
+  .card h2 { margin: 0 0 4px; font-size: 18px; }
+  .card p.hint { margin: 0 0 16px; color: var(--muted); font-size: 14px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 4px; }
+  input, select {
+    width: 100%; padding: 9px 10px; font: inherit; color: var(--ink); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px;
+  }
+  input[readonly] { opacity: .65; }
+  .actions { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+  button.primary { background: var(--brand); color: var(--brand-ink); border: 0; padding: 10px 16px; border-radius: 6px; font: inherit; font-weight: 700; cursor: pointer; }
+  button.ghost { background: none; color: var(--ink); border: 1px solid var(--line); padding: 10px 16px; border-radius: 6px; font: inherit; cursor: pointer; }
+  button.mini { background: none; border: 1px solid var(--line); color: var(--ink); border-radius: 5px; padding: 4px 9px; font-size: 13px; cursor: pointer; }
+  button.mini.danger { color: var(--danger); }
+  button.mini:hover, button.ghost:hover { background: var(--bg); }
+
+  .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .toolbar h2 { margin: 0 auto 0 0; font-size: 18px; }
+  .toolbar input { width: 220px; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  td.wrap { white-space: normal; min-width: 180px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.acts { display: flex; gap: 6px; }
+  .empty { color: var(--muted); padding: 24px 10px; text-align: center; }
+
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 700; }
+  .badge.ok { background: var(--ok-bg); color: var(--brand); }
+  .badge.warn { background: var(--warn-bg); color: var(--ink); }
+  .badge.off { background: var(--off-bg); color: var(--muted); }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 8px; max-width: min(92vw, 560px);
+    font-size: 14px; display: none; z-index: 10;
+  }
+  #toast.erro { background: #8c1d18; }
+  #toast.show { display: block; }
+</style>
+</head>
+<body>
+<header>
+  <h1>ROCKET</h1>
+  <span class="sub">SoulUp · missões diárias e vouchers de mobilidade</span>
+  <span class="status"><span class="dot" id="dot"></span><span id="statusTxt">verificando API…</span></span>
+</header>
+
+<nav role="tablist" aria-label="Seções">
+  <button role="tab" aria-selected="true" data-tab="usuarios">Usuários</button>
+  <button role="tab" aria-selected="false" data-tab="missoes">Missões</button>
+  <button role="tab" aria-selected="false" data-tab="vouchers">Vouchers</button>
+</nav>
+
+<main>
+  <!-- ===================== USUÁRIOS ===================== -->
+  <section id="usuarios" class="grid">
+    <form class="card" id="formUsuario" autocomplete="off">
+      <h2 id="tituloUsuario">Cadastrar usuário</h2>
+      <p class="hint">Todo usuário começa com 0 pontos e status ATIVO.</p>
+      <label for="uNome">Nome</label>
+      <input id="uNome" required maxlength="100">
+      <label for="uCpf">CPF (11 dígitos)</label>
+      <input id="uCpf" required inputmode="numeric" maxlength="14">
+      <label for="uEmail">E-mail</label>
+      <input id="uEmail" type="email" required maxlength="150">
+      <label for="uSenha" id="lblSenha">Senha (mín. 6 caracteres)</label>
+      <input id="uSenha" type="password" maxlength="50">
+      <div id="boxStatus" hidden>
+        <label for="uStatus">Status</label>
+        <select id="uStatus"><option>ATIVO</option><option>INATIVO</option></select>
+      </div>
+      <div class="actions">
+        <button class="primary" type="submit" id="btnUsuario">Cadastrar</button>
+        <button class="ghost" type="button" id="cancelUsuario" hidden>Cancelar edição</button>
+      </div>
+    </form>
+    <div class="card">
+      <div class="toolbar"><h2>Usuários cadastrados</h2><button class="ghost" id="recarregaUsuarios">Atualizar</button></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>ID</th><th>Nome</th><th>CPF</th><th>E-mail</th><th class="num">Pontos</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="tbUsuarios"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- ===================== MISSÕES ===================== -->
+  <section id="missoes" class="grid" hidden>
+    <form class="card" id="formMissao" autocomplete="off">
+      <h2 id="tituloMissao">Cadastrar missão</h2>
+      <p class="hint">Concluir uma missão soma os pontos ao saldo do usuário. Cada missão só pode ser concluída uma vez.</p>
+      <label for="mCpf">CPF do usuário</label>
+      <input id="mCpf" required inputmode="numeric" maxlength="14">
+      <label for="mTitulo">Título</label>
+      <input id="mTitulo" required maxlength="150">
+      <label for="mDescricao">Descrição</label>
+      <input id="mDescricao" maxlength="255">
+      <label for="mPontos">Pontos (1 a 1000)</label>
+      <input id="mPontos" type="number" min="1" max="1000" required>
+      <label for="mCategoria">Categoria</label>
+      <select id="mCategoria"><option>Sustentabilidade</option><option>Engajamento</option><option>Mobilidade</option></select>
+      <div class="actions">
+        <button class="primary" type="submit" id="btnMissao">Cadastrar</button>
+        <button class="ghost" type="button" id="cancelMissao" hidden>Cancelar edição</button>
+      </div>
+    </form>
+    <div class="card">
+      <div class="toolbar">
+        <h2>Missões</h2>
+        <input id="fMissaoCpf" placeholder="Filtrar por CPF" inputmode="numeric">
+        <button class="ghost" id="filtraMissoes">Filtrar</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>ID</th><th>Título</th><th>Categoria</th><th class="num">Pontos</th><th>CPF</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="tbMissoes"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- ===================== VOUCHERS ===================== -->
+  <section id="vouchers" class="grid" hidden>
+    <form class="card" id="formVoucher" autocomplete="off">
+      <h2>Gerar voucher</h2>
+      <p class="hint">Cada voucher custa 50 pontos, vale R$ 4,40 e tem validade de 30 dias.</p>
+      <label for="vCpf">CPF do usuário</label>
+      <input id="vCpf" required inputmode="numeric" maxlength="14">
+      <label for="vTipo">Benefício (opcional)</label>
+      <input id="vTipo" maxlength="100" placeholder="Passagem de metrô gratuita">
+      <div class="actions"><button class="primary" type="submit">Gerar voucher</button></div>
+    </form>
+    <div class="card">
+      <div class="toolbar">
+        <h2>Vouchers</h2>
+        <input id="fVoucherCpf" placeholder="Filtrar por CPF" inputmode="numeric">
+        <button class="ghost" id="filtraVouchers">Filtrar</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>ID</th><th>Código</th><th>Benefício</th><th class="num">Valor</th><th>CPF</th><th>Validade</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="tbVouchers"></tbody>
+      </table></div>
+    </div>
+  </section>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const digits = (v) => String(v || '').replace(/\D/g, '');
+  const dinheiro = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const dataBr = (iso) => (iso ? iso.split('-').reverse().join('/') : '');
+
+  // ---------- chamadas à API (mesma origem; para outro servidor, defina API_BASE) ----------
+  const API_BASE = '';
+  async function api(metodo, caminho, corpo) {
+    const res = await fetch(API_BASE + caminho, {
+      method: metodo,
+      headers: corpo ? { 'Content-Type': 'application/json' } : {},
+      body: corpo ? JSON.stringify(corpo) : undefined,
+    });
+    if (res.status === 204) return null;
+    let dados = null;
+    try { dados = await res.json(); } catch (e) { /* corpo vazio */ }
+    if (!res.ok) throw new Error((dados && dados.mensagem) || 'Erro ' + res.status);
+    return dados;
+  }
+
+  let timer;
+  function toast(msg, erro) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'show' + (erro ? ' erro' : '');
+    clearTimeout(timer);
+    timer = setTimeout(() => { t.className = ''; }, 4500);
+  }
+  const falha = (e) => toast(e.message, true);
+  const vazio = (cols, txt) => `<tr><td class="empty" colspan="${cols}">${txt}</td></tr>`;
+  const badge = (s) => {
+    const cls = s === 'ATIVO' || s === 'CONCLUIDA' ? 'ok' : s === 'DISPONIVEL' ? 'warn' : 'off';
+    return `<span class="badge ${cls}">${esc(s)}</span>`;
+  };
+
+  // ---------- abas ----------
+  document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('nav button').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+    ['usuarios', 'missoes', 'vouchers'].forEach((id) => { $(id).hidden = id !== b.dataset.tab; });
+    if (b.dataset.tab === 'usuarios') carregarUsuarios();
+    if (b.dataset.tab === 'missoes') carregarMissoes();
+    if (b.dataset.tab === 'vouchers') carregarVouchers();
+  }));
+
+  // =============================== USUÁRIOS ===============================
+  let editandoUsuario = null;
+  async function carregarUsuarios() {
+    try {
+      const lista = await api('GET', '/usuarios');
+      $('tbUsuarios').innerHTML = lista.length ? lista.map((u) => `
+        <tr><td>${u.idUsuario}</td><td>${esc(u.nome)}</td><td>${esc(u.cpf)}</td><td>${esc(u.email)}</td>
+        <td class="num">${u.pontos}</td><td>${badge(u.status)}</td>
+        <td class="acts"><button class="mini" data-edit="${u.idUsuario}">Editar</button>
+        <button class="mini danger" data-del="${u.idUsuario}">Excluir</button></td></tr>`).join('')
+        : vazio(7, 'Nenhum usuário cadastrado.');
+      $('tbUsuarios')._lista = lista;
+    } catch (e) { falha(e); }
+  }
+  function resetUsuario() {
+    editandoUsuario = null;
+    $('formUsuario').reset();
+    $('tituloUsuario').textContent = 'Cadastrar usuário';
+    $('btnUsuario').textContent = 'Cadastrar';
+    $('uCpf').readOnly = false;
+    $('uSenha').required = true;
+    $('lblSenha').textContent = 'Senha (mín. 6 caracteres)';
+    $('boxStatus').hidden = true;
+    $('cancelUsuario').hidden = true;
+  }
+  $('formUsuario').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const corpo = { nome: $('uNome').value, cpf: $('uCpf').value, email: $('uEmail').value, senha: $('uSenha').value };
+    try {
+      if (editandoUsuario) {
+        corpo.status = $('uStatus').value;
+        await api('PUT', '/usuarios/' + editandoUsuario, corpo);
+        toast('Usuário atualizado com sucesso!');
+      } else {
+        await api('POST', '/usuarios', corpo);
+        toast('Cadastro realizado com sucesso!');
+      }
+      resetUsuario();
+      carregarUsuarios();
+    } catch (e) { falha(e); }
+  });
+  $('cancelUsuario').addEventListener('click', resetUsuario);
+  $('recarregaUsuarios').addEventListener('click', carregarUsuarios);
+  $('tbUsuarios').addEventListener('click', async (ev) => {
+    const b = ev.target.closest('button');
+    if (!b) return;
+    if (b.dataset.edit) {
+      const u = $('tbUsuarios')._lista.find((x) => x.idUsuario === Number(b.dataset.edit));
+      editandoUsuario = u.idUsuario;
+      $('uNome').value = u.nome; $('uCpf').value = u.cpf; $('uEmail').value = u.email; $('uSenha').value = '';
+      $('uStatus').value = u.status;
+      $('uCpf').readOnly = true; $('uSenha').required = false;
+      $('lblSenha').textContent = 'Nova senha (deixe em branco para manter)';
+      $('tituloUsuario').textContent = 'Editar usuário';
+      $('btnUsuario').textContent = 'Salvar alterações';
+      $('boxStatus').hidden = false; $('cancelUsuario').hidden = false;
+      $('uNome').focus();
+    } else if (b.dataset.del && confirm('Excluir este usuário?')) {
+      try { await api('DELETE', '/usuarios/' + b.dataset.del); toast('Usuário excluído.'); carregarUsuarios(); }
+      catch (e) { falha(e); }
+    }
+  });
+
+  // =============================== MISSÕES ===============================
+  let editandoMissao = null;
+  async function carregarMissoes() {
+    const cpf = digits($('fMissaoCpf').value);
+    try {
+      const lista = await api('GET', '/missoes' + (cpf ? '?cpf=' + cpf : ''));
+      $('tbMissoes').innerHTML = lista.length ? lista.map((m) => `
+        <tr><td>${m.idMissao}</td><td class="wrap">${esc(m.titulo)}<br><small>${esc(m.descricao)}</small></td>
+        <td>${esc(m.categoria)}</td><td class="num">${m.pontos}</td><td>${esc(m.cpfUsuario)}</td><td>${badge(m.status)}</td>
+        <td class="acts">${m.status === 'DISPONIVEL'
+          ? `<button class="mini" data-done="${m.idMissao}">Concluir</button><button class="mini" data-edit="${m.idMissao}">Editar</button>` : ''}
+        <button class="mini danger" data-del="${m.idMissao}">Excluir</button></td></tr>`).join('')
+        : vazio(7, 'Nenhuma missão encontrada.');
+      $('tbMissoes')._lista = lista;
+    } catch (e) { falha(e); }
+  }
+  function resetMissao() {
+    editandoMissao = null;
+    $('formMissao').reset();
+    $('tituloMissao').textContent = 'Cadastrar missão';
+    $('btnMissao').textContent = 'Cadastrar';
+    $('mCpf').readOnly = false;
+    $('cancelMissao').hidden = true;
+  }
+  $('formMissao').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const corpo = {
+      cpfUsuario: $('mCpf').value, titulo: $('mTitulo').value, descricao: $('mDescricao').value,
+      pontos: Number($('mPontos').value), categoria: $('mCategoria').value,
+    };
+    try {
+      if (editandoMissao) { await api('PUT', '/missoes/' + editandoMissao, corpo); toast('Missão atualizada com sucesso!'); }
+      else { await api('POST', '/missoes', corpo); toast('Missão cadastrada com sucesso!'); }
+      resetMissao();
+      carregarMissoes();
+    } catch (e) { falha(e); }
+  });
+  $('cancelMissao').addEventListener('click', resetMissao);
+  $('filtraMissoes').addEventListener('click', carregarMissoes);
+  $('tbMissoes').addEventListener('click', async (ev) => {
+    const b = ev.target.closest('button');
+    if (!b) return;
+    try {
+      if (b.dataset.done) {
+        const r = await api('PATCH', '/missoes/' + b.dataset.done + '/concluir');
+        toast(`Missão concluída! +${r.missao.pontos} pontos. Saldo do usuário: ${r.pontosUsuario}.`);
+        carregarMissoes();
+      } else if (b.dataset.edit) {
+        const m = $('tbMissoes')._lista.find((x) => x.idMissao === Number(b.dataset.edit));
+        editandoMissao = m.idMissao;
+        $('mCpf').value = m.cpfUsuario; $('mCpf').readOnly = true;
+        $('mTitulo').value = m.titulo; $('mDescricao').value = m.descricao || ''; $('mPontos').value = m.pontos;
+        const cat = m.categoria.charAt(0) + m.categoria.slice(1).toLowerCase();
+        $('mCategoria').value = cat;
+        $('tituloMissao').textContent = 'Editar missão';
+        $('btnMissao').textContent = 'Salvar alterações';
+        $('cancelMissao').hidden = false;
+        $('mTitulo').focus();
+      } else if (b.dataset.del && confirm('Excluir esta missão?')) {
+        await api('DELETE', '/missoes/' + b.dataset.del);
+        toast('Missão excluída.');
+        carregarMissoes();
+      }
+    } catch (e) { falha(e); }
+  });
+
+  // =============================== VOUCHERS ===============================
+  async function carregarVouchers() {
+    const cpf = digits($('fVoucherCpf').value);
+    try {
+      const lista = await api('GET', '/vouchers' + (cpf ? '?cpf=' + cpf : ''));
+      $('tbVouchers').innerHTML = lista.length ? lista.map((v) => `
+        <tr><td>${v.idVoucher}</td><td><strong>${esc(v.codigo)}</strong></td><td class="wrap">${esc(v.tipoBeneficio)}</td>
+        <td class="num">${dinheiro(v.valor)}</td><td>${esc(v.cpfUsuario)}</td><td>${dataBr(v.validade)}</td><td>${badge(v.status)}</td>
+        <td class="acts">${v.status === 'DISPONIVEL' ? `<button class="mini" data-use="${v.idVoucher}">Resgatar</button>` : ''}
+        <button class="mini danger" data-del="${v.idVoucher}">Excluir</button></td></tr>`).join('')
+        : vazio(8, 'Nenhum voucher encontrado.');
+    } catch (e) { falha(e); }
+  }
+  $('formVoucher').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    try {
+      const v = await api('POST', '/vouchers', { cpfUsuario: $('vCpf').value, tipoBeneficio: $('vTipo').value });
+      toast(`Voucher ${v.codigo} gerado! 50 pontos descontados.`);
+      $('formVoucher').reset();
+      carregarVouchers();
+    } catch (e) { falha(e); }
+  });
+  $('filtraVouchers').addEventListener('click', carregarVouchers);
+  $('tbVouchers').addEventListener('click', async (ev) => {
+    const b = ev.target.closest('button');
+    if (!b) return;
+    try {
+      if (b.dataset.use) {
+        const cpf = prompt('Confirme o CPF do dono do voucher:');
+        if (!cpf) return;
+        await api('PATCH', '/vouchers/' + b.dataset.use + '/resgatar', { cpf });
+        toast('Voucher resgatado com sucesso!');
+        carregarVouchers();
+      } else if (b.dataset.del && confirm('Excluir este voucher?')) {
+        await api('DELETE', '/vouchers/' + b.dataset.del);
+        toast('Voucher excluído.');
+        carregarVouchers();
+      }
+    } catch (e) { falha(e); }
+  });
+
+  // ---------- indicador de conexão com a API ----------
+  fetch(API_BASE + '/usuarios').then((r) => {
+    $('dot').className = 'dot ' + (r.ok ? 'on' : 'off');
+    $('statusTxt').textContent = r.ok ? 'API online' : 'API com erro (' + r.status + ')';
+  }).catch(() => { $('dot').className = 'dot off'; $('statusTxt').textContent = 'API offline'; });
+
+  carregarUsuarios();
+})();
+</script>
+</body>
+</html>
